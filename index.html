@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthquake Safety Guide</title>
+    <!-- Import Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.15), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(37, 99, 235, 0.15), transparent 25%);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        /* Animations */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-msg { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* Typing Dots Animation */
+        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-slate-300 h-screen w-full flex items-center justify-center sm:p-4 overflow-hidden">
+    
+    <!-- Floating App Container -->
+    <div class="w-full h-full sm:h-[95vh] max-w-4xl flex flex-col relative bg-slate-950/60 sm:border border-slate-800/60 sm:rounded-3xl shadow-2xl backdrop-blur-xl overflow-hidden">
+        
+        <!-- Header -->
+        <header class="p-5 sm:p-6 shrink-0 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md z-20 flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-lg shadow-violet-900/40 shrink-0">
+                    <i data-lucide="activity" class="text-white w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Earthquake Guide</h1>
+                    <p class="text-slate-400 mt-0.5 text-xs font-medium flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Emergency AI Assistant
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <button onclick="resetChat()" class="w-full sm:w-auto px-4 py-2 rounded-lg border border-slate-700 bg-slate-800/50 text-slate-300 hover:bg-violet-600/20 hover:text-violet-400 hover:border-violet-500/50 transition-all duration-300 flex items-center justify-center gap-2 font-medium text-sm">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Restart
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat History -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth pb-48 z-10 relative">
+            <!-- Messages inject here -->
+        </div>
+
+        <!-- Sticky Footer for Options -->
+        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-slate-950 via-slate-950 to-transparent pt-12 pb-4 px-4 sm:px-6 z-20">
+            
+            <div id="options-container" class="flex flex-col gap-3 mb-4 max-w-2xl mx-auto">
+                <!-- Action Cards inject here -->
+            </div>
+
+            <div class="text-[11px] text-slate-500 text-center max-w-2xl mx-auto leading-relaxed px-4">
+                <p>Rule-based general safety information. Does not replace instructions from local disaster authorities. In an emergency, call <span class="text-violet-400 font-semibold">112</span>.</p>
+                <p class="hidden sm:block mt-1">Tip: Press the number key on your keyboard to select an option quickly.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const chatContainer = document.getElementById('chat-container');
+        const optionsContainer = document.getElementById('options-container');
+
+        let stage = 'shaking';
+        let currentOptions = []; 
+        let isTyping = false;
+        
+        const initialText = "EARTHQUAKE SAFETY GUIDANCE\nThis rule-based program gives general safety guidance.\n\nIs the ground shaking right now?";
+        const initialOptions = ['yes', 'no'];
+
+        // Keyboard listener
+        document.addEventListener('keydown', (e) => {
+            if (isTyping) return; // Prevent input while bot is typing
+            const num = parseInt(e.key);
+            if (num > 0 && num <= currentOptions.length) {
+                handleResponse(currentOptions[num - 1]);
+            }
+        });
+
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatContainer.scrollTo({
+                    top: chatContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 50);
+        }
+
+        // Add a message bubble to the chat
+        function addMessage(sender, text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex w-full ${sender === 'user' ? 'justify-end' : 'justify-start'} animate-msg`;
+            
+            const layout = document.createElement('div');
+            layout.className = `flex items-end gap-3 max-w-[90%] sm:max-w-[80%] ${sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`;
+
+            // Avatar
+            const avatar = document.createElement('div');
+            avatar.className = `flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
+                sender === 'user' ? 'bg-blue-600' : 'bg-slate-800 border border-slate-700'
+            }`;
+            avatar.innerHTML = `<i data-lucide="${sender === 'user' ? 'user' : 'bot'}" class="w-4 h-4 text-white"></i>`;
+
+            // Bubble
+            const bubble = document.createElement('div');
+            if (sender === 'bot') {
+                bubble.className = "bg-slate-800/80 border border-slate-700/50 text-slate-200 p-4 sm:p-5 rounded-2xl rounded-bl-sm whitespace-pre-wrap leading-relaxed shadow-lg backdrop-blur-sm text-sm sm:text-base";
+            } else {
+                bubble.className = "bg-gradient-to-br from-violet-600 to-blue-600 text-white font-medium p-3 sm:p-4 rounded-2xl rounded-br-sm whitespace-pre-wrap shadow-lg shadow-violet-900/30 text-sm sm:text-base";
+            }
+            
+            bubble.textContent = text;
+            
+            layout.appendChild(avatar);
+            layout.appendChild(bubble);
+            wrapper.appendChild(layout);
+            
+            chatContainer.appendChild(wrapper);
+            lucide.createIcons();
+            scrollToBottom();
+        }
+
+        // Show typing indicator
+        function showTyping() {
+            isTyping = true;
+            optionsContainer.innerHTML = ''; // Clear options
+            currentOptions = [];
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'typing-indicator';
+            wrapper.className = `flex w-full justify-start animate-msg`;
+            
+            wrapper.innerHTML = `
+                <div class="flex items-end gap-3 max-w-[80%]">
+                    <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md bg-slate-800 border border-slate-700">
+                        <i data-lucide="bot" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div class="bg-slate-800/80 border border-slate-700/50 p-4 rounded-2xl rounded-bl-sm flex gap-1 items-center h-12">
+                        <div class="w-2 h-2 bg-violet-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-violet-400 rounded-full typing-dot"></div>
+                        <div class="w-2 h-2 bg-violet-400 rounded-full typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(wrapper);
+            lucide.createIcons();
+            scrollToBottom();
+        }
+
+        // Remove typing indicator
+        function removeTyping() {
+            isTyping = false;
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        // Render choice buttons
+        function renderOptions(options) {
+            optionsContainer.innerHTML = '';
+            currentOptions = options;
+            
+            options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left bg-slate-800/90 border border-slate-700 hover:border-violet-500 hover:bg-slate-800 text-slate-200 rounded-xl p-3 sm:p-4 transition-all duration-300 flex items-center gap-4 animate-msg group shadow-sm hover:shadow-lg hover:shadow-violet-900/20 backdrop-blur-sm transform hover:-translate-y-0.5";
+                btn.style.animationDelay = `${index * 0.05}s`;
+                
+                btn.innerHTML = `
+                    <span class="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-900 group-hover:bg-gradient-to-br group-hover:from-violet-500 group-hover:to-blue-500 group-hover:text-white border border-slate-700 group-hover:border-transparent flex items-center justify-center font-bold text-xs sm:text-sm transition-all shadow-sm">
+                        ${index + 1}
+                    </span>
+                    <span class="text-sm sm:text-base font-medium capitalize tracking-wide">${option}</span>
+                `;
+                
+                btn.onclick = () => handleResponse(option);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function resetChat() {
+            stage = 'shaking';
+            chatContainer.innerHTML = '';
+            addMessage('bot', initialText);
+            renderOptions(initialOptions);
+        }
+
+        function handleResponse(answer) {
+            if (isTyping) return;
+            
+            optionsContainer.innerHTML = '';
+            addMessage('user', answer);
+            showTyping();
+
+            // Simulate network/thinking delay
+            setTimeout(() => {
+                removeTyping();
+                
+                let botResponse = '';
+                let nextOptions = [];
+                let nextStage = stage;
+
+                // Decision Tree Logic
+                if (stage === 'shaking') {
+                    if (answer.toLowerCase() === 'yes') {
+                        botResponse = 'FIRST: Protect yourself while the ground is shaking.\n\nWhere are you right now?';
+                        nextOptions = ['indoors', 'outdoors', 'vehicle'];
+                        nextStage = 'location';
+                    } else {
+                        botResponse = 'If shaking has already stopped, stay alert for aftershocks.\n\nIs anyone injured or in immediate danger?';
+                        nextOptions = ['yes', 'no'];
+                        nextStage = 'injured';
+                    }
+                } 
+                else if (stage === 'location') {
+                    if (answer.toLowerCase() === 'indoors') {
+                        botResponse = 'GUIDANCE — INDOORS\n• Stay inside; do not run outside while the building is shaking.\n• DROP, COVER, AND HOLD ON: get under a sturdy desk/table and hold on.\n• If there is no sturdy cover, get low and protect your head and neck with your arms.\n• Stay away from windows, glass, exterior walls, and tall/heavy furniture.\n• Do not use elevators.\n\nAre you in a multi-storey/high-rise building?';
+                        nextOptions = ['yes', 'no'];
+                        nextStage = 'high_rise';
+                    } else if (answer.toLowerCase() === 'outdoors') {
+                        botResponse = 'GUIDANCE — OUTDOORS\n• Move to an open area if you can do so safely.\n• Keep away from buildings, walls, trees, streetlights, signs, and power lines.\n• Drop low and protect your head and neck until the shaking stops.\n\nWhen the shaking stops, check for injuries and hazards before moving.\n\nIs anyone injured or in immediate danger?';
+                        nextOptions = ['yes', 'no'];
+                        nextStage = 'injured';
+                    } else {
+                        botResponse = 'GUIDANCE — IN A VEHICLE\n• Pull over carefully in a clear place, away from bridges, overpasses, trees, and power lines.\n• Stop and remain inside the vehicle until the shaking stops.\n• When moving again, watch for damaged roads and debris.\n\nWhen the shaking stops, check for injuries and hazards before moving.\n\nIs anyone injured or in immediate danger?';
+                        nextOptions = ['yes', 'no'];
+                        nextStage = 'injured';
+                    }
+                }
+                else if (stage === 'high_rise') {
+                    if (answer.toLowerCase() === 'yes') {
+                        botResponse = 'Stay on your floor, away from windows; do not use the lift during shaking.\n\nWhen the shaking stops, check for injuries and hazards before moving.\n\nIs anyone injured or in immediate danger?';
+                    } else {
+                        botResponse = 'When the shaking stops, check for injuries and hazards before moving.\n\nIs anyone injured or in immediate danger?';
+                    }
+                    nextOptions = ['yes', 'no'];
+                    nextStage = 'injured';
+                }
+                else if (stage === 'injured') {
+                    if (answer.toLowerCase() === 'yes') {
+                        botResponse = 'GUIDANCE — INJURY / IMMEDIATE DANGER\n• Contact local emergency services as soon as possible.\n• Give basic help only if it is safe to do so.\n• Do not move a seriously injured person unless they face immediate danger.\n\nDo you notice serious building damage, fire, or a suspected gas leak?';
+                    } else {
+                        botResponse = 'GUIDANCE — CHECK YOUR SURROUNDINGS\n• Expect aftershocks; be ready to DROP, COVER, AND HOLD ON again.\n• Watch for broken glass, falling objects, and damaged structures.\n\nDo you notice serious building damage, fire, or a suspected gas leak?';
+                    }
+                    nextOptions = ['yes', 'no', 'unsure'];
+                    nextStage = 'hazard';
+                }
+                else if (stage === 'hazard') {
+                    if (answer.toLowerCase() === 'yes' || answer.toLowerCase() === 'unsure') {
+                        botResponse = 'GUIDANCE — POSSIBLE HAZARD\n• Move away from the danger if you can do so safely and warn others nearby.\n• Do not enter a damaged building or touch fallen power lines.\n• If you smell gas, do not light flames or operate electrical switches.\n• Contact local emergency services / the relevant utility provider.';
+                    } else {
+                        botResponse = 'GUIDANCE — NO OBVIOUS HAZARD\n• Stay alert for aftershocks and follow official local alerts/instructions.\n• If authorities advise evacuation, use stairs when safe; do not use elevators.\n• Wear sturdy footwear and avoid damaged areas.';
+                    }
+                    nextOptions = ['Restart Chat'];
+                    nextStage = 'end';
+                }
+                else if (stage === 'end') {
+                    resetChat();
+                    return;
+                }
+
+                stage = nextStage;
+                addMessage('bot', botResponse);
+                renderOptions(nextOptions);
+
+            }, 800); // 800ms "thinking" time
+        }
+
+        // Initialize App
+        addMessage('bot', initialText);
+        renderOptions(initialOptions);
+
+    </script>
+</body>
+</html>
